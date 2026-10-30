@@ -1,0 +1,99 @@
+// Data model for the job agent, stored in Neon Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// The single user of this app. Every profile and questionnaire answer
+// lives in `answers`, keyed by the ids in src/lib/questionnaire.ts.
+model Profile {
+  id        Int      @id @default(1)
+  answers   Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+// The master resume plus every tailored version made from it.
+model Resume {
+  id           Int           @id @default(autoincrement())
+  label        String
+  content      String
+  // Original upload (PDF/DOCX), sent to portals as-is for the master.
+  fileName     String?
+  fileType     String?
+  fileData     Bytes?
+  isMaster     Boolean       @default(false)
+  // Set on tailored versions: the job this version was written for.
+  jobId        Int?
+  job          Job?          @relation(fields: [jobId], references: [id])
+  atsScore     Int?
+  createdAt    DateTime      @default(now())
+  applications Application[]
+}
+
+// Extra portal questions not covered by the questionnaire.
+model Answer {
+  id        Int      @id @default(autoincrement())
+  category  String   @default("General")
+  question  String
+  answer    String
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  source       String // e.g. "LinkedIn", "Indeed", "Greenhouse"
+  externalId   String
+  title        String
+  company      String
+  location     String        @default("")
+  category     String        @default("Other")
+  url          String
+  description  String        @default("")
+  // When the employer posted it, as reported by the source.
+  postedAt     DateTime
+  // When our feed first saw it.
+  discoveredAt DateTime      @default(now())
+  status       String        @default("new") // new | skipped | queued | applied
+  resumes      Resume[]
+  applications Application[]
+
+  @@unique([source, externalId])
+  @@index([postedAt])
+}
+
+model Application {
+  id        Int       @id @default(autoincrement())
+  jobId     Int
+  job       Job       @relation(fields: [jobId], references: [id])
+  resumeId  Int?
+  resume    Resume?   @relation(fields: [resumeId], references: [id])
+  portal    String    @default("") // e.g. "Workday", "SuccessFactors", "LinkedIn Easy Apply"
+  status    String    @default("pending_approval") // pending_approval | submitted | failed
+  appliedAt DateTime?
+  createdAt DateTime  @default(now())
+  logs      ApplicationLog[]
+}
+
+// Step-by-step record of what the agent did for an application.
+model ApplicationLog {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  at            DateTime    @default(now())
+  message       String
+}
+
+// One row per job feed run, shown on the dashboard.
+model FeedRun {
+  id      Int      @id @default(autoincrement())
+  at      DateTime @default(now())
+  found   Int
+  added   Int
+  summary Json
+}
