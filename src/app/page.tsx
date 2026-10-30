@@ -6,7 +6,7 @@ import { Card, Stat } from "./ui";
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const [jobs, applications, lastRun] = await Promise.all([
+  const [jobs, applications, lastRun, needsYou] = await Promise.all([
     db.job.findMany({ select: { postedAt: true } }),
     db.application.findMany({
       where: { status: "submitted" },
@@ -14,6 +14,7 @@ export default async function Dashboard() {
       orderBy: { appliedAt: "desc" },
     }),
     db.feedRun.findFirst({ orderBy: { at: "desc" } }),
+    db.application.count({ where: { status: { in: ["needs_you", "pending_approval"] } } }),
   ]);
 
   const now = Date.now();
@@ -37,6 +38,12 @@ export default async function Dashboard() {
           {lastRun ? `Job feed last checked ${ago(lastRun.at)}, ${lastRun.added} new` : "Job feed hasn't run yet"}
         </span>
       </div>
+
+      {needsYou > 0 && (
+        <Link href="/applications" className="block rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          {needsYou} application{needsYou === 1 ? "" : "s"} waiting on you (approval, a new question, or a CAPTCHA).
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Applied" value={applications.length} />

@@ -56,6 +56,20 @@ The ATS score and keyword check are plain code and always run. Rewriting the res
 
 Each job then shows its ATS score on the **Jobs** page. Open a job to see the keywords matched, the ones added from your skills list, the ones you don't have (never added), and the exact resume version used.
 
+## 6. Turn on the apply agent
+
+The apply agent runs on GitHub Actions every 10 minutes. Each run takes up to 2 queued jobs (best ATS score first), opens the posting in a headless browser, and has Claude fill in the company's portal (Workday, SuccessFactors, Greenhouse, Lever, iCIMS and others) from your profile, uploading the resume version chosen for that job. It uses the same `CLAUDE_CODE_OAUTH_TOKEN` as step 5, so it runs on your Max plan.
+
+1. Make up a **new password used only for job portals** (many portals, Workday especially, make you create an account per company). Don't reuse a password from anywhere else.
+2. Add it as a GitHub secret named `PORTAL_PASSWORD`.
+3. Make sure **Email** in your profile is the address you want portal accounts and recruiter emails to go to.
+4. In **Agent settings**, **Submit applications automatically?** is Yes unless you change it. With "No, ask me first", the agent fills everything in and stops at the final step; you click **Approve and submit** on the Applications page.
+
+What still needs you, shown at the top of the dashboard:
+- **New questions**: when a portal asks something your profile doesn't cover, the agent stops, adds the question under **Profile → Other questions**, and marks the application "needs you". Answer it and click **Retry**.
+- **CAPTCHAs and email verification codes**: the agent can't pass these, so the application is marked "needs you" with a link to the posting to finish yourself.
+- **LinkedIn / Indeed-only postings**: never applied through those sites; marked "needs you".
+
 ## If something goes wrong
 
 | You see | Do this |
@@ -65,4 +79,5 @@ Each job then shows its ATS score on the **Jobs** page. Open a job to see the ke
 | The dashboard says the feed hasn't run | Check GitHub → **Actions → Job feed** for a red run; the log names the problem. Scheduled runs only start once the code is on the `main` branch. |
 | A source shows an error in the run log | A wrong board name gives 404; a JSearch 403 means the key or plan is wrong. |
 | A job's note says "Tailoring failed" | Check `CLAUDE_CODE_OAUTH_TOKEN`; tokens from `claude setup-token` last about a year. |
+| Applications show "failed" | Open it on the Applications page: the log shows the last step the agent reached and the error. **Retry** queues it again. |
 | A page shows "Application error" | Vercel → the project → **Logs** shows the real error. |

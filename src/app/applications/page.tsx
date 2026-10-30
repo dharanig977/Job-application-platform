@@ -1,6 +1,13 @@
 import { db } from "@/lib/db";
 import { duration, stamp } from "@/lib/time";
 import { Badge, Card } from "../ui";
+import { approveApplication, skipApplication } from "./actions";
+
+const ACTIONS: Record<string, string> = {
+  pending_approval: "Approve and submit",
+  needs_you: "Retry",
+  failed: "Retry",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +28,23 @@ export default async function ApplicationsPage() {
               <div className="font-medium">{a.job.title}</div>
               <div className="text-sm text-zinc-500">{a.job.company} · {a.portal || a.job.source}</div>
             </div>
-            <Badge status={a.status} />
+            <div className="flex items-center gap-2">
+              {ACTIONS[a.status] && (
+                <>
+                  <form action={approveApplication}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <button className="rounded bg-zinc-900 px-2 py-1 text-xs text-white dark:bg-white dark:text-zinc-900">{ACTIONS[a.status]}</button>
+                  </form>
+                  <form action={skipApplication}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <button className="text-xs text-zinc-500 hover:underline">Skip</button>
+                  </form>
+                </>
+              )}
+              <Badge status={a.status} />
+            </div>
           </div>
+          {a.job.note && a.status !== "submitted" && <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">{a.job.note}</p>}
 
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
             <div><dt className="text-xs text-zinc-500">Posted</dt><dd>{stamp(a.job.postedAt)}</dd></div>
