@@ -1,0 +1,36 @@
+name: Apply agent
+
+on:
+  schedule:
+    # Every 10 minutes; each run applies to at most APPLY_PER_RUN jobs and
+    # respects the daily limit set in your profile.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: apply-agent
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser and Claude Code
+        run: |
+          npx playwright install --with-deps chromium
+          npm install -g @anthropic-ai/claude-code
+      - name: Apply to queued jobs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DATABASE_URL }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          PORTAL_PASSWORD: ${{ secrets.PORTAL_PASSWORD }}
+          APPLY_PER_RUN: "2"
+        run: node scripts/apply-jobs.mjs
