@@ -28,10 +28,29 @@ You need: your GitHub account (already connected), Neon (the database is already
 1. Open the Vercel link. Your browser asks for a username and password: type any username and your `APP_PASSWORD`.
 2. Go to **Profile**, upload your resume, answer the questionnaire and click **Save all answers**.
 
+## 4. Turn on the job feed
+
+The feed runs on GitHub Actions: company boards every 5 minutes, and the LinkedIn / Indeed / Google Jobs listings every 30 minutes.
+
+1. In **Profile**, fill in **Target job titles** (the feed searches for these) and, under **Agent settings**, any **Company job boards to watch**.
+2. Get a JSearch key (covers LinkedIn, Indeed, Google Jobs, Dice and more): sign up at [rapidapi.com](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch), subscribe to a JSearch plan, and copy your **X-RapidAPI-Key**. The free plan is too small for checks every 30 minutes; a paid plan is needed for that.
+3. Optional, free: an Adzuna key from [developer.adzuna.com](https://developer.adzuna.com) (App ID and App Key).
+4. GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**, and add:
+
+| Name | Value |
+|---|---|
+| `DATABASE_URL` | the **direct** Neon string (pooling off) from step 1 |
+| `JSEARCH_API_KEY` | your RapidAPI key |
+| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | optional |
+
+5. GitHub → **Actions → Job feed → Run workflow** to try it once. New jobs appear on the **Jobs** page, and the dashboard shows when the feed last ran.
+
 ## If something goes wrong
 
 | You see | Do this |
 |---|---|
 | "Server setup: APP_PASSWORD is not set." | Add `APP_PASSWORD` in Vercel → Settings → Environment Variables, then **Redeploy**. |
 | Build fails at `prisma migrate deploy` | `DIRECT_URL` is missing or wrong. Re-copy it from Neon with pooling off. |
+| The dashboard says the feed hasn't run | Check GitHub → **Actions → Job feed** for a red run; the log names the problem. Scheduled runs only start once the code is on the `main` branch. |
+| A source shows an error in the run log | A wrong board name gives 404; a JSearch 403 means the key or plan is wrong. |
 | A page shows "Application error" | Vercel → the project → **Logs** shows the real error. |

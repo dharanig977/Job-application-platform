@@ -120,6 +120,11 @@ export const QUESTIONNAIRE: Section[] = [
   {
     title: "Agent settings",
     questions: [
+      {
+        id: "watchBoards", label: "Company job boards to watch", type: "textarea",
+        placeholder: "greenhouse:stripe\nlever:palantir\nashby:ramp",
+        help: "One per line. These are checked every 5 minutes and show jobs the moment a company posts them. The board name is in the company's careers URL (boards.greenhouse.io/NAME, jobs.lever.co/NAME, jobs.ashbyhq.com/NAME).",
+      },
       { id: "autoSubmit", label: "Submit applications automatically?", type: "select", options: ["Yes", "No, ask me first"], help: "When off, filled-in applications wait for your approval." },
       { id: "dailyLimit", label: "Maximum applications per day", type: "number", placeholder: "25" },
       { id: "minAtsScore", label: "Minimum ATS score to apply", type: "number", placeholder: "75", help: "Jobs whose tailored resume scores below this are skipped." },

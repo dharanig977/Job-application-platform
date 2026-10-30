@@ -1,0 +1,41 @@
+name: Job feed
+
+on:
+  schedule:
+    # Company boards every 5 minutes (GitHub's shortest interval; runs can
+    # start a few minutes late when GitHub is busy).
+    - cron: "*/5 * * * *"
+    # Paid aggregators (LinkedIn, Indeed, Google Jobs listings) every 30
+    # minutes, to stay inside the API plan.
+    - cron: "2,32 * * * *"
+  workflow_dispatch:
+    inputs:
+      aggregators:
+        description: "Also query JSearch / Adzuna"
+        type: boolean
+        default: true
+
+concurrency:
+  group: job-feed
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch new jobs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DATABASE_URL }}
+          JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          INCLUDE_AGGREGATORS: ${{ (github.event.schedule == '2,32 * * * *' || inputs.aggregators) && '1' || '0' }}
+        run: node scripts/fetch-jobs.mjs

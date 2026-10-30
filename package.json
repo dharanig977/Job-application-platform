@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:seed": "node prisma/seed.mjs",
     "db:migrate": "prisma migrate dev",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "node --test \"scripts/**/*.test.mjs\""
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

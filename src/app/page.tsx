@@ -6,13 +6,14 @@ import { Card, Stat } from "./ui";
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const [jobs, applications] = await Promise.all([
+  const [jobs, applications, lastRun] = await Promise.all([
     db.job.findMany({ select: { postedAt: true } }),
     db.application.findMany({
       where: { status: "submitted" },
       include: { job: true, resume: true },
       orderBy: { appliedAt: "desc" },
     }),
+    db.feedRun.findFirst({ orderBy: { at: "desc" } }),
   ]);
 
   const now = Date.now();
@@ -30,7 +31,12 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <span className="text-sm text-zinc-500">
+          {lastRun ? `Job feed last checked ${ago(lastRun.at)}, ${lastRun.added} new` : "Job feed hasn't run yet"}
+        </span>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Applied" value={applications.length} />

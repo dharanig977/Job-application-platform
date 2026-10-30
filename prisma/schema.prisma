@@ -88,3 +88,12 @@ model ApplicationLog {
   at            DateTime    @default(now())
   message       String
 }
+
+// One row per job feed run, shown on the dashboard.
+model FeedRun {
+  id      Int      @id @default(autoincrement())
+  at      DateTime @default(now())
+  found   Int
+  added   Int
+  summary Json
+}
