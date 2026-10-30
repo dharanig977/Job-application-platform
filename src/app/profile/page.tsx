@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { QUESTIONNAIRE, completion, type Answers, type Question } from "@/lib/questionnaire";
+import { SaveForm } from "../save-form";
 import { Card } from "../ui";
 import { deleteAnswer, saveAnswer, saveQuestionnaire, uploadResume } from "./actions";
 
@@ -69,7 +70,13 @@ export default async function ProfilePage() {
         )}
       </Card>
 
-      <form action={saveQuestionnaire} className="space-y-6">
+      <SaveForm
+        action={saveQuestionnaire}
+        className="space-y-6"
+        footerClassName="sticky bottom-0 -mx-4 border-t border-zinc-200 bg-[var(--background)] px-4 py-3 dark:border-zinc-800"
+        submitLabel="Save all answers"
+        savedLabel="All answers saved"
+      >
         {QUESTIONNAIRE.map((section) => (
           <Card key={section.title}>
             <h2 className="font-medium">{section.title}</h2>
@@ -79,10 +86,7 @@ export default async function ProfilePage() {
             </div>
           </Card>
         ))}
-        <div className="sticky bottom-0 -mx-4 border-t border-zinc-200 bg-[var(--background)] px-4 py-3 dark:border-zinc-800">
-          <button className={button}>Save all answers</button>
-        </div>
-      </form>
+      </SaveForm>
 
       <Card>
         <h2 className="mb-1 font-medium">Other questions</h2>
