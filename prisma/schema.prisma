@@ -1,0 +1,93 @@
+// Data model for the job agent. SQLite locally; switch provider to
+// "postgresql" (e.g. Supabase or Neon) when deploying.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// The single user of this app.
+model Profile {
+  id          Int      @id @default(1)
+  fullName    String   @default("")
+  email       String   @default("")
+  phone       String   @default("")
+  location    String   @default("")
+  linkedinUrl String   @default("")
+  // Comma-separated lists, kept simple for a single-user app.
+  targetRoles String   @default("")
+  targetLocations String @default("")
+  seniority   String   @default("")
+  updatedAt   DateTime @updatedAt
+}
+
+// The master resume plus every tailored version made from it.
+model Resume {
+  id           Int           @id @default(autoincrement())
+  label        String
+  content      String
+  isMaster     Boolean       @default(false)
+  // Set on tailored versions: the job this version was written for.
+  jobId        Int?
+  job          Job?          @relation(fields: [jobId], references: [id])
+  atsScore     Int?
+  createdAt    DateTime      @default(now())
+  applications Application[]
+}
+
+// Standard answers for application-portal questions.
+model Answer {
+  id        Int      @id @default(autoincrement())
+  category  String   @default("General")
+  question  String
+  answer    String
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  source       String // e.g. "LinkedIn", "Indeed", "Greenhouse"
+  externalId   String
+  title        String
+  company      String
+  location     String        @default("")
+  category     String        @default("Other")
+  url          String
+  description  String        @default("")
+  // When the employer posted it, as reported by the source.
+  postedAt     DateTime
+  // When our feed first saw it.
+  discoveredAt DateTime      @default(now())
+  status       String        @default("new") // new | skipped | queued | applied
+  resumes      Resume[]
+  applications Application[]
+
+  @@unique([source, externalId])
+  @@index([postedAt])
+}
+
+model Application {
+  id        Int       @id @default(autoincrement())
+  jobId     Int
+  job       Job       @relation(fields: [jobId], references: [id])
+  resumeId  Int?
+  resume    Resume?   @relation(fields: [resumeId], references: [id])
+  portal    String    @default("") // e.g. "Workday", "SuccessFactors", "LinkedIn Easy Apply"
+  status    String    @default("pending_approval") // pending_approval | submitted | failed
+  appliedAt DateTime?
+  createdAt DateTime  @default(now())
+  logs      ApplicationLog[]
+}
+
+// Step-by-step record of what the agent did for an application.
+model ApplicationLog {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  at            DateTime    @default(now())
+  message       String
+}
