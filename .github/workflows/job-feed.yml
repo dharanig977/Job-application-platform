@@ -5,9 +5,9 @@ on:
     # Company boards every 5 minutes (GitHub's shortest interval; runs can
     # start a few minutes late when GitHub is busy).
     - cron: "*/5 * * * *"
-    # Paid aggregators (LinkedIn, Indeed, Google Jobs listings) every 30
-    # minutes, to stay inside the API plan.
-    - cron: "2,32 * * * *"
+    # Aggregators (LinkedIn, Indeed, Google Jobs listings) every 6 hours,
+    # one JSearch request per run, which fits JSearch's free tier.
+    - cron: "2 */6 * * *"
   workflow_dispatch:
     inputs:
       aggregators:
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,5 +37,17 @@ jobs:
           JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
-          INCLUDE_AGGREGATORS: ${{ (github.event.schedule == '2,32 * * * *' || inputs.aggregators) && '1' || '0' }}
+          INCLUDE_AGGREGATORS: ${{ (github.event.schedule == '2 */6 * * *' || inputs.aggregators) && '1' || '0' }}
         run: node scripts/fetch-jobs.mjs
+      - name: Install Claude Code
+        if: env.HAS_CLAUDE == 'true'
+        env:
+          HAS_CLAUDE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Score and tailor resumes for new jobs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DATABASE_URL }}
+          # Signs Claude Code in with your Claude plan (from `claude setup-token`).
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: node scripts/tailor-jobs.mjs
