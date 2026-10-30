@@ -77,6 +77,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               <th className="px-4 py-2">Category</th>
               <th className="px-4 py-2">Source</th>
               <th className="px-4 py-2">Posted</th>
+              <th className="px-4 py-2">ATS</th>
               <th className="px-4 py-2">Status</th>
             </tr>
           </thead>
@@ -84,17 +85,18 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             {jobs.map((j) => (
               <tr key={j.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-900">
                 <td className="px-4 py-2">
-                  <a href={j.url} target="_blank" rel="noreferrer" className="font-medium hover:underline">{j.title}</a>
+                  <Link href={`/jobs/${j.id}`} className="font-medium hover:underline">{j.title}</Link>
                   <div className="text-xs text-zinc-500">{j.company} · {j.location}</div>
                 </td>
                 <td className="px-4 py-2">{j.category}</td>
                 <td className="px-4 py-2">{j.source}</td>
                 <td className="px-4 py-2 whitespace-nowrap">{ago(j.postedAt)}</td>
+                <td className="px-4 py-2">{j.atsScore ?? "–"}</td>
                 <td className="px-4 py-2"><Badge status={j.status} /></td>
               </tr>
             ))}
             {jobs.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-zinc-500">No jobs match these filters.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-zinc-500">No jobs match these filters.</td></tr>
             )}
           </tbody>
         </table>

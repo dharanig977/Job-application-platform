@@ -3,8 +3,9 @@
 // profile, and saves them. Safe to re-run: already-seen jobs are skipped.
 //
 // Env: DATABASE_URL, optional JSEARCH_API_KEY, ADZUNA_APP_ID/ADZUNA_APP_KEY.
-// INCLUDE_AGGREGATORS=1 also queries the paid aggregators (rationed to
-// fewer runs to stay inside API plan limits).
+// INCLUDE_AGGREGATORS=1 also queries the aggregators. To stay inside
+// JSearch's free tier, each run sends one JSearch request, rotating through
+// the target titles.
 import { PrismaClient } from "@prisma/client";
 import { BOARD_FETCHERS, adzuna, jsearch } from "./feed/sources.mjs";
 import { buildFilter, list } from "./feed/filter.mjs";
@@ -31,9 +32,11 @@ async function main() {
 
   if (process.env.INCLUDE_AGGREGATORS === "1") {
     const where = list(answers.targetLocations)[0];
+    const runIndex = Math.floor(Date.now() / (6 * 60 * 60 * 1000));
+    const jsearchRole = roles[runIndex % roles.length];
+    const query = where ? `${jsearchRole} in ${where}` : jsearchRole;
+    if (process.env.JSEARCH_API_KEY) tasks.push({ name: `jsearch "${query}"`, run: () => jsearch(query, process.env.JSEARCH_API_KEY) });
     for (const role of roles) {
-      const query = where ? `${role} in ${where}` : role;
-      if (process.env.JSEARCH_API_KEY) tasks.push({ name: `jsearch "${query}"`, run: () => jsearch(query, process.env.JSEARCH_API_KEY) });
       if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY) {
         tasks.push({ name: `adzuna "${role}"`, run: () => adzuna(role, process.env.ADZUNA_APP_ID, process.env.ADZUNA_APP_KEY) });
       }

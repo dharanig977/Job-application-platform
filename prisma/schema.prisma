@@ -60,6 +60,12 @@ model Job {
   // When our feed first saw it.
   discoveredAt DateTime      @default(now())
   status       String        @default("new") // new | skipped | queued | applied
+  // ATS result for the best resume version: score, plus matched / missing /
+  // supported / unsupported keywords and the master resume's score.
+  atsScore     Int?
+  ats          Json?
+  // Why the agent skipped the job, or other notes for you.
+  note         String?
   resumes      Resume[]
   applications Application[]
 

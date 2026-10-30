@@ -5,8 +5,8 @@ A personal job-application agent. It finds new job posts within minutes, scores 
 ## Build plan
 
 1. **Profile and tracker screens** (this step): resume upload, the full Workday/SuccessFactors-style questionnaire, jobs tracker by category and "posted within" window, applications log.
-2. **Job feed**: polls job APIs (JSearch for Google Jobs/LinkedIn/Indeed listings, Adzuna, Greenhouse/Lever/Ashby boards) every few minutes, removes duplicates, records posted and discovered times.
-3. **AI match and tailoring**: ATS-style score, missing keywords, tailored resume versions.
+2. **Job feed**: Greenhouse/Lever/Ashby boards every 5 minutes; JSearch (LinkedIn, Indeed, Google Jobs listings) and Adzuna every 6 hours on their free tiers.
+3. **ATS score and tailoring**: keyword scoring in plain code; resume rewrites through Claude Code on your Claude plan. Only keywords backed by your resume or listed skills are ever added.
 4. **Apply assistant**: a browser agent that fills Workday, SuccessFactors and other portals from the answer bank; you approve each submission.
 
 LinkedIn and Indeed are used only as listing sources through job APIs. The agent never signs into those accounts, and applications go through each company's own portal.

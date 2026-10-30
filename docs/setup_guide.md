@@ -30,10 +30,10 @@ You need: your GitHub account (already connected), Neon (the database is already
 
 ## 4. Turn on the job feed
 
-The feed runs on GitHub Actions: company boards every 5 minutes, and the LinkedIn / Indeed / Google Jobs listings every 30 minutes.
+The feed runs on GitHub Actions: company boards every 5 minutes, and the LinkedIn / Indeed / Google Jobs listings every 6 hours (one JSearch request per run, which fits JSearch's free plan).
 
 1. In **Profile**, fill in **Target job titles** (the feed searches for these) and, under **Agent settings**, any **Company job boards to watch**.
-2. Get a JSearch key (covers LinkedIn, Indeed, Google Jobs, Dice and more): sign up at [rapidapi.com](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch), subscribe to a JSearch plan, and copy your **X-RapidAPI-Key**. The free plan is too small for checks every 30 minutes; a paid plan is needed for that.
+2. Get a JSearch key (covers LinkedIn, Indeed, Google Jobs, Dice and more): sign up at [rapidapi.com](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch), subscribe to the free **Basic** plan, and copy your **X-RapidAPI-Key**. For more frequent checks later, move to a paid plan and change `2 */6 * * *` in `.github/workflows/job-feed.yml`.
 3. Optional, free: an Adzuna key from [developer.adzuna.com](https://developer.adzuna.com) (App ID and App Key).
 4. GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**, and add:
 
@@ -45,6 +45,17 @@ The feed runs on GitHub Actions: company boards every 5 minutes, and the LinkedI
 
 5. GitHub → **Actions → Job feed → Run workflow** to try it once. New jobs appear on the **Jobs** page, and the dashboard shows when the feed last ran.
 
+## 5. Turn on resume tailoring (uses your Claude Max plan)
+
+The ATS score and keyword check are plain code and always run. Rewriting the resume uses Claude Code signed in with your Claude plan, so there is no separate API bill; it counts toward your plan's usage limits.
+
+1. On your computer, install Claude Code once: `npm install -g @anthropic-ai/claude-code` (needs Node.js), or follow [the Claude Code install page](https://docs.claude.com/en/docs/claude-code/setup).
+2. Run `claude setup-token`, sign in with the account that has your Max plan, and copy the token it prints.
+3. Add it as a GitHub secret named `CLAUDE_CODE_OAUTH_TOKEN` (same place as step 4).
+4. In **Profile → Agent settings**, set **Minimum ATS score** (default 75) and **Maximum applications per day** (default 25; it also caps rewrites per day).
+
+Each job then shows its ATS score on the **Jobs** page. Open a job to see the keywords matched, the ones added from your skills list, the ones you don't have (never added), and the exact resume version used.
+
 ## If something goes wrong
 
 | You see | Do this |
@@ -53,4 +64,5 @@ The feed runs on GitHub Actions: company boards every 5 minutes, and the LinkedI
 | Build fails at `prisma migrate deploy` | `DIRECT_URL` is missing or wrong. Re-copy it from Neon with pooling off. |
 | The dashboard says the feed hasn't run | Check GitHub → **Actions → Job feed** for a red run; the log names the problem. Scheduled runs only start once the code is on the `main` branch. |
 | A source shows an error in the run log | A wrong board name gives 404; a JSearch 403 means the key or plan is wrong. |
+| A job's note says "Tailoring failed" | Check `CLAUDE_CODE_OAUTH_TOKEN`; tokens from `claude setup-token` last about a year. |
 | A page shows "Application error" | Vercel → the project → **Logs** shows the real error. |
