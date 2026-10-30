@@ -27,7 +27,7 @@ async function main() {
   await prisma.profile.upsert({
     where: { id: 1 },
     update: {},
-    create: { id: 1, fullName: "Gopi", targetRoles: "Data Engineer, SAP Consultant", targetLocations: "Remote, US" },
+    create: { id: 1, answers: {} },
   });
 
   const master = await prisma.resume.create({
@@ -73,15 +73,6 @@ async function main() {
   }
   void master;
 
-  await prisma.answer.createMany({
-    data: [
-      { category: "Eligibility", question: "Are you legally authorized to work in the US?", answer: "" },
-      { category: "Eligibility", question: "Will you now or in the future require visa sponsorship?", answer: "" },
-      { category: "Compensation", question: "Desired salary", answer: "" },
-      { category: "Availability", question: "Notice period / earliest start date", answer: "" },
-      { category: "Preferences", question: "Willing to relocate?", answer: "" },
-    ],
-  });
 }
 
 main().finally(() => prisma.$disconnect());

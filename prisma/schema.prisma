@@ -1,28 +1,21 @@
-// Data model for the job agent. SQLite locally; switch provider to
-// "postgresql" (e.g. Supabase or Neon) when deploying.
+// Data model for the job agent, stored in Neon Postgres.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// The single user of this app.
+// The single user of this app. Every profile and questionnaire answer
+// lives in `answers`, keyed by the ids in src/lib/questionnaire.ts.
 model Profile {
-  id          Int      @id @default(1)
-  fullName    String   @default("")
-  email       String   @default("")
-  phone       String   @default("")
-  location    String   @default("")
-  linkedinUrl String   @default("")
-  // Comma-separated lists, kept simple for a single-user app.
-  targetRoles String   @default("")
-  targetLocations String @default("")
-  seniority   String   @default("")
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(1)
+  answers   Json     @default("{}")
+  updatedAt DateTime @updatedAt
 }
 
 // The master resume plus every tailored version made from it.
@@ -30,6 +23,10 @@ model Resume {
   id           Int           @id @default(autoincrement())
   label        String
   content      String
+  // Original upload (PDF/DOCX), sent to portals as-is for the master.
+  fileName     String?
+  fileType     String?
+  fileData     Bytes?
   isMaster     Boolean       @default(false)
   // Set on tailored versions: the job this version was written for.
   jobId        Int?
@@ -39,7 +36,7 @@ model Resume {
   applications Application[]
 }
 
-// Standard answers for application-portal questions.
+// Extra portal questions not covered by the questionnaire.
 model Answer {
   id        Int      @id @default(autoincrement())
   category  String   @default("General")

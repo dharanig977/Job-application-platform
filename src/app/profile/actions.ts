@@ -2,36 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { QUESTION_IDS, type Answers } from "@/lib/questionnaire";
+import { resumeText } from "@/lib/resume-text";
 
 const text = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
+// Vercel caps request bodies at 4.5 MB.
+const MAX_RESUME_BYTES = 4 * 1024 * 1024;
 
-export async function saveProfile(form: FormData) {
-  const data = {
-    fullName: text(form, "fullName"),
-    email: text(form, "email"),
-    phone: text(form, "phone"),
-    location: text(form, "location"),
-    linkedinUrl: text(form, "linkedinUrl"),
-    targetRoles: text(form, "targetRoles"),
-    targetLocations: text(form, "targetLocations"),
-    seniority: text(form, "seniority"),
-  };
-  await db.profile.upsert({ where: { id: 1 }, update: data, create: { id: 1, ...data } });
+export async function saveQuestionnaire(form: FormData) {
+  const answers: Answers = {};
+  for (const id of QUESTION_IDS) answers[id] = text(form, id);
+  await db.profile.upsert({ where: { id: 1 }, update: { answers }, create: { id: 1, answers } });
   revalidatePath("/profile");
 }
 
-export async function saveMasterResume(form: FormData) {
+export async function uploadResume(form: FormData) {
   const file = form.get("file");
-  let content = text(form, "content");
-  // Plain-text uploads replace the pasted text; PDF/DOCX parsing comes with step 3.
-  if (file instanceof File && file.size > 0) content = (await file.text()).trim();
+  if (!(file instanceof File) || file.size === 0) return;
+  if (file.size > MAX_RESUME_BYTES) throw new Error("Resume must be under 4 MB.");
 
+  const data = {
+    content: await resumeText(file),
+    fileName: file.name,
+    fileType: file.type || "application/octet-stream",
+    fileData: Buffer.from(await file.arrayBuffer()),
+  };
   const master = await db.resume.findFirst({ where: { isMaster: true } });
-  if (master) {
-    await db.resume.update({ where: { id: master.id }, data: { content } });
-  } else {
-    await db.resume.create({ data: { label: "Master resume", isMaster: true, content } });
-  }
+  if (master) await db.resume.update({ where: { id: master.id }, data });
+  else await db.resume.create({ data: { label: "Master resume", isMaster: true, ...data } });
   revalidatePath("/profile");
 }
 
